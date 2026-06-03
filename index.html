@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>KasirKu - Aplikasi Kasir Toko</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <!-- Library QRCode.js -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-store"></i>
+        <h1>KasirKu</h1>
+      </div>
+      <div class="header-info">
+        <span id="dateTime"></span>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <div class="products-section">
+        <div class="section-title">
+          <i class="fas fa-cubes"></i>
+          <h2>Daftar Produk</h2>
+        </div>
+        <div class="category-filter">
+          <button class="filter-btn active" data-category="all">Semua</button>
+          <button class="filter-btn" data-category="makanan">🍚 Makanan</button>
+          <button class="filter-btn" data-category="minuman">🥤 Minuman</button>
+        </div>
+        <div id="productList" class="product-grid"></div>
+      </div>
+
+      <div class="cart-section">
+        <div class="section-title">
+          <i class="fas fa-shopping-cart"></i>
+          <h2>Keranjang</h2>
+        </div>
+        <div id="cartItemsContainer" class="cart-items-list">
+          <div class="empty-cart-msg">Keranjang masih kosong</div>
+        </div>
+        <div class="cart-summary">
+          <div class="total-row">
+            <span>Total Belanja:</span>
+            <span id="cartTotalPrice" class="total-amount">Rp 0</span>
+          </div>
+          <button id="checkoutBtn" class="btn-checkout">
+            <i class="fas fa-credit-card"></i> Bayar Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PEMBAYARAN -->
+  <div id="paymentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-lock"></i> Payment Gateway</h3>
+        <span class="close-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="payment-info">
+          <p>Total yang harus dibayar:</p>
+          <div class="payment-total" id="paymentTotalAmount">Rp 0</div>
+        </div>
+
+        <div class="payment-methods">
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="cash" checked> <i class="fas fa-money-bill-wave"></i> Tunai
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="card"> <i class="fas fa-credit-card"></i> Kartu Kredit
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="transfer"> <i class="fas fa-university"></i> Transfer Bank
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="qris"> <i class="fas fa-qrcode"></i> QRIS
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="dana"> <i class="fas fa-wallet"></i> Dana
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="ovo"> <i class="fas fa-mobile-alt"></i> OVO
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="shopeepay"> <i class="fas fa-shop"></i> ShopeePay
+          </label>
+          <label class="method-option">
+            <input type="radio" name="paymentMethod" value="gopay"> <i class="fas fa-dragon"></i> GoPay
+          </label>
+        </div>
+
+        <!-- Detail pembayaran cash -->
+        <div id="cashDetails" class="cash-details">
+          <label>Jumlah Tunai: </label>
+          <input type="number" id="cashAmount" placeholder="Masukkan nominal tunai" min="0" step="1000">
+          <div id="changeAmount" class="change-text"></div>
+        </div>
+
+        <!-- Detail kartu kredit -->
+        <div id="cardDetails" class="card-details hidden">
+          <input type="text" placeholder="Nomor Kartu (16 digit)" id="cardNumber" maxlength="19">
+          <div class="card-row">
+            <input type="text" placeholder="MM/YY" id="cardExpiry" maxlength="5">
+            <input type="text" placeholder="CVV" id="cardCvv" maxlength="3">
+          </div>
+        </div>
+
+        <!-- Detail transfer bank -->
+        <div id="transferDetails" class="transfer-details hidden">
+          <p>Silakan transfer ke rekening <strong>BCA 1234567890</strong> a.n. TOKO KASIRKU</p>
+          <p>Klik "Proses Pembayaran" setelah transfer</p>
+        </div>
+
+        <!-- Detail pembayaran digital (QR Code) -->
+        <div id="digitalDetails" class="digital-details hidden">
+          <div id="qrCodeContainer" class="qr-placeholder"></div>
+          <p id="digitalInstruction" class="digital-text">Pilih metode pembayaran digital</p>
+          <button id="confirmDigitalPayment" class="btn-confirm-digital">Konfirmasi Pembayaran</button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="processPaymentBtn" class="btn-process">Proses Pembayaran</button>
+        <button id="cancelPaymentBtn" class="btn-cancel">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL STRUK -->
+  <div id="receiptModal" class="modal receipt-modal">
+    <div class="modal-content receipt-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-receipt"></i> Struk Pembayaran</h3>
+        <span class="close-receipt">&times;</span>
+      </div>
+      <div class="modal-body receipt-body" id="receiptBody"></div>
+      <div class="modal-footer">
+        <button id="closeReceiptBtn" class="btn-primary">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/products.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
